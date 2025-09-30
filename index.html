@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Real-time streaming line chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#111;color:#eee}
+        #wrapper{max-width:900px;margin:40px auto}
+        canvas{background:#1e1e1e;border-radius:6px}
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <canvas id="liveChart" height="120"></canvas>
+    </div>
+
+    <script>
+        /* ---------- config ---------- */
+        const MAX_POINTS = 60;          // how many points are visible at once
+        const INTERVAL   = 200;         // milliseconds between new points
+
+        /* ---------- build empty chart ---------- */
+        const ctx = document.getElementById('liveChart');
+        const liveChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],             // x-axis (time index here)
+                datasets: [{
+                    label: 'Live value',
+                    data: [],
+                    borderColor: '#0af',
+                    backgroundColor: 'rgba(0,170,255,.15)',
+                    tension: .25,
+                    fill: true,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 0 }, // disable internal animations
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    x: { display: false },  // we only care about the trace
+                    y: { min: -10, max: 110, ticks: { stepSize: 20 } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        /* ---------- streaming logic ---------- */
+        let counter = 0;
+        setInterval(() => {
+            // produce new value (replace with your own feed)
+            const value = 30 + Math.random() * 40 + Math.sin(counter * 0.1) * 15;
+
+            // add new point
+            liveChart.data.labels.push(counter++);
+            liveChart.data.datasets[0].data.push(value);
+
+            // remove oldest point when we exceed MAX_POINTS
+            if (liveChart.data.labels.length > MAX_POINTS) {
+                liveChart.data.labels.shift();
+                liveChart.data.datasets[0].data.shift();
+            }
+
+            // refresh chart
+            liveChart.update('none');   // 'none' = no animation → instant redraw
+        }, INTERVAL);
+    </script>
+</body>
+</html>
